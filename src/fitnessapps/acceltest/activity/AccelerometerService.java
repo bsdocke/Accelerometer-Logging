@@ -153,13 +153,15 @@ public class AccelerometerService extends Service implements
 	private void accelerometerHandler(SensorEvent event) {
 		AccelerometerData data = new AccelerometerData(event.values[0],
 				event.values[1], event.values[2], new Date());
-		if (gameName != null) {
+		if (gameName != null && endOfGame != true) {
 			data.setGameName(gameName);
 			gameName = null;
 		}
-		if (endOfGame == true) {
+		if (endOfGame == true && gameName != null) {
 			data.setEndOfGame(endOfGame);
+			data.setGameName(gameName);
 			endOfGame = false;
+			gameName = null;
 		}
 		accelerationData.add(data);
 	}
