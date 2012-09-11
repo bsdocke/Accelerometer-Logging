@@ -33,27 +33,27 @@ public class AccelerometerService extends Service implements
 	private boolean endOfGame;
 	private String idNum;
 	private IAccelRemoteService.Stub accelRemoteService = new IAccelRemoteService.Stub() {
-		
+
 		public void setGameNameFromService(String name) throws RemoteException {
 			gameName = name;
-			
+
 		}
 
 		public void setEndGameFlagFromService(boolean flag)
 				throws RemoteException {
 			endOfGame = flag;
-			
+
 		}
 	};
-	
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		Log.d("Service Bind", "onBind()");
-		return accelRemoteService; // object of the class that implements Service
-								// interface.
+		return accelRemoteService; // object of the class that implements
+									// Service
+									// interface.
 	}
 
-	
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 		// TODO Auto-generated method stub
 
@@ -70,68 +70,83 @@ public class AccelerometerService extends Service implements
 	@Override
 	public void onDestroy() {
 		// code to execute when the service is shutting down
-		
+
 		try {
 			sensorManager.unregisterListener(this);
 		} catch (NullPointerException e) {
 
 		}
-		try {
-			
-			File card = Environment.getExternalStorageDirectory();
-			File directory = new File(card.getAbsolutePath()
-					+ "/test/accelerometerdata");
-			directory.mkdirs();
+		(new Thread(new Runnable() {
 
-			Date time = new Date();
-			String dayString = "";
-			int day = time.getDay();
+			public void run() {
+				try {
+					File card = Environment.getExternalStorageDirectory();
+					File directory = new File(card.getAbsolutePath()
+							+ "/test/accelerometerdata");
+					directory.mkdirs();
 
-			if (day < 10) {
-				dayString = "0" + day;
-			} else {
-				dayString += day;
-			}
+					Date time = new Date();
+					String dayString = "";
+					int day = time.getDate();
 
-			String monthString = "";
-			int month = time.getMonth();
+					if (day < 10) {
+						dayString = "0" + day;
+					} else {
+						dayString += day;
+					}
 
-			if (month < 10) {
-				monthString = "0" + month;
-			} else {
-				monthString += month;
-			}
-			String fileName = idNum + "_test_"
-					+ time.getYear() + "-" + dayString + "-" + monthString + "-" + time.getHours() + "-" + time.getMinutes()
-					+ "_0.csv";
+					String monthString = "";
+					int month = time.getMonth() + 1;
 
-			File sampleFile = new File(directory, fileName);
-			sampleFile.createNewFile();
+					if (month < 10) {
+						monthString = "0" + month;
+					} else {
+						monthString += month;
+					}
+					int year = time.getYear() + 1900;
+					String fileName = idNum + "_" + year + "-"
+							+ monthString + "-" + dayString + "_"
+							+ time.getHours() + "-" + time.getMinutes()
+							+ ".csv";
 
-			FileWriter fw = new FileWriter(sampleFile);
-			fw.write("--------------------------------Data File Created by Motorola Droid Android v2.0.1-----------------------------------------\n");
-			fw.write("Epoch Period (hh:mm:ss) 00:00:15\n");
-			fw.write("---------------------------------------------------------------------------------------------------------------------------\n");
-			fw.write("Timestamp,X-Acceleration,Y-Acceleration,Z-Acceleration\n");
-			Log.d("SAMPLES",Integer.toString(accelerationData.size()));
-			for (AccelerometerData data : accelerationData) {
-				if (data.getGameName() != null) {
-					fw.write("-----------------" + data.getGameName() + " " + data.getTime() + " ------------------------------------------\n");
+					File sampleFile = new File(directory, fileName);
+					sampleFile.createNewFile();
+
+					FileWriter fw = new FileWriter(sampleFile);
+					fw.write("--------------------------------Data File Created by Motorola Droid Android v2.0.1-----------------------------------------\n");
+					fw.write("Epoch Period (hh:mm:ss) 00:00:15\n");
+					fw.write("---------------------------------------------------------------------------------------------------------------------------\n");
+					fw.write("Timestamp,X-Acceleration,Y-Acceleration,Z-Acceleration\n");
+					Log.d("SAMPLES", Integer.toString(accelerationData.size()));
+					for (AccelerometerData data : accelerationData) {
+						if (data.getGameName() != null) {
+							fw.write("-----------------"
+									+ data.getGameName()
+									+ " "
+									+ data.getTime()
+									+ " ------------------------------------------\n");
+						}
+						fw.write(data.getTime() + "," + data.getAccelerationX()
+								+ "," + data.getAccelerationY() + ","
+								+ data.getAccelerationZ() + "\n");
+						if (data.getEndOfGame() == true) {
+							fw.write("-----------------END OF "
+									+ data.getGameName()
+									+ " "
+									+ data.getTime()
+									+ " ------------------------------------------\n");
+						}
+					}
+					fw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					Log.d("WRITEACCELEROMETER", "File write failed");
 				}
-				fw.write(data.getTime() + "," + data.getAccelerationX() + "," + data.getAccelerationY() + "," + data.getAccelerationZ()
-						+ "\n");
-				if (data.getEndOfGame() == true) {
-					fw.write("-----------------END OF " + data.getGameName() + " " + data.getTime() + " ------------------------------------------\n");
-				}
 			}
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			Log.d("WRITEACCELEROMETER", "File write failed");
-		}
+		})).start();
 		super.onDestroy();
 		Toast.makeText(this, "Service destroyed...", Toast.LENGTH_LONG).show();
-		
+
 	}
 
 	@Override
@@ -144,7 +159,7 @@ public class AccelerometerService extends Service implements
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		sensorManager.registerListener(this, sensorAccelerometer,
 				SensorManager.SENSOR_DELAY_GAME);
-		
+
 		Toast.makeText(this, "Service started...", Toast.LENGTH_LONG).show();
 
 		return startid;
@@ -165,7 +180,7 @@ public class AccelerometerService extends Service implements
 		}
 		accelerationData.add(data);
 	}
-	
+
 	public void onSensorChanged(SensorEvent event) {
 		switch (event.sensor.getType()) {
 		case Sensor.TYPE_ACCELEROMETER:
