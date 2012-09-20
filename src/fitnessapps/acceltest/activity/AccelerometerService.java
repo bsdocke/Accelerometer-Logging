@@ -119,7 +119,7 @@ public class AccelerometerService extends Service implements
 					fw.write("Timestamp,X-Acceleration,Y-Acceleration,Z-Acceleration\n");
 					Log.d("SAMPLES", Integer.toString(accelerationData.size()));
 					for (AccelerometerData data : accelerationData) {
-						if (data.getGameName() != null) {
+						if (data.getGameName() != null && data.getEndOfGame() != true) {
 							fw.write("-----------------"
 									+ data.getGameName()
 									+ " "
@@ -129,7 +129,7 @@ public class AccelerometerService extends Service implements
 						fw.write(data.getTime() + "," + data.getAccelerationX()
 								+ "," + data.getAccelerationY() + ","
 								+ data.getAccelerationZ() + "\n");
-						if (data.getEndOfGame() == true) {
+						if (data.getEndOfGame() == true && data.getGameName() != null) {
 							fw.write("-----------------END OF "
 									+ data.getGameName()
 									+ " "
