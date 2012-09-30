@@ -158,7 +158,7 @@ public class AccelerometerService extends Service implements
 		sensorAccelerometer = sensorManager
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		sensorManager.registerListener(this, sensorAccelerometer,
-				33333);
+				SensorManager.SENSOR_DELAY_GAME);
 
 		Toast.makeText(this, "Service started...", Toast.LENGTH_LONG).show();
 
