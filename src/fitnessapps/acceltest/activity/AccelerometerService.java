@@ -26,12 +26,12 @@ public class AccelerometerService extends Service implements
 	private static final long MINIMUM_DISTANCE_CHANGE_FOR_UPDATES = 1;
 	private static final long MINIMUM_TIME_BETWEEN_UPDATES = 1000;
 	private LocationManager manager;
-	private ArrayList<AccelerometerData> accelerationData;
 	private SensorManager sensorManager;
 	private Sensor sensorAccelerometer;
 	private String gameName;
 	private boolean endOfGame;
 	private String idNum;
+	private FileWriter fileWriter;
 	private IAccelRemoteService.Stub accelRemoteService = new IAccelRemoteService.Stub() {
 
 		public void setGameNameFromService(String name) throws RemoteException {
@@ -65,6 +65,9 @@ public class AccelerometerService extends Service implements
 		super.onCreate();
 		gameName = null;
 		endOfGame = false;
+		
+		
+		
 	}
 
 	@Override
@@ -74,76 +77,14 @@ public class AccelerometerService extends Service implements
 		try {
 			sensorManager.unregisterListener(this);
 		} catch (NullPointerException e) {
-
+			e.printStackTrace();
 		}
-		(new Thread(new Runnable() {
-
-			public void run() {
-				try {
-					File card = Environment.getExternalStorageDirectory();
-					File directory = new File(card.getAbsolutePath()
-							+ "/test/accelerometerdata");
-					directory.mkdirs();
-
-					Date time = new Date();
-					String dayString = "";
-					int day = time.getDate();
-
-					if (day < 10) {
-						dayString = "0" + day;
-					} else {
-						dayString += day;
-					}
-
-					String monthString = "";
-					int month = time.getMonth() + 1;
-
-					if (month < 10) {
-						monthString = "0" + month;
-					} else {
-						monthString += month;
-					}
-					int year = time.getYear() + 1900;
-					String fileName = idNum + "_" + year + "-"
-							+ monthString + "-" + dayString + "_"
-							+ time.getHours() + "-" + time.getMinutes()
-							+ ".csv";
-
-					File sampleFile = new File(directory, fileName);
-					sampleFile.createNewFile();
-
-					FileWriter fw = new FileWriter(sampleFile);
-					fw.write("--------------------------------Data File Created by Motorola Droid Android v2.0.1-----------------------------------------\n");
-					fw.write("Epoch Period (hh:mm:ss) 00:00:15\n");
-					fw.write("---------------------------------------------------------------------------------------------------------------------------\n");
-					fw.write("Timestamp,X-Acceleration,Y-Acceleration,Z-Acceleration\n");
-					Log.d("SAMPLES", Integer.toString(accelerationData.size()));
-					for (AccelerometerData data : accelerationData) {
-						if (data.getGameName() != null && data.getEndOfGame() != true) {
-							fw.write("-----------------"
-									+ data.getGameName()
-									+ " "
-									+ data.getTime()
-									+ " ------------------------------------------\n");
-						}
-						fw.write(data.getTime() + "," + data.getAccelerationX()
-								+ "," + data.getAccelerationY() + ","
-								+ data.getAccelerationZ() + "\n");
-						if (data.getEndOfGame() == true && data.getGameName() != null) {
-							fw.write("-----------------END OF "
-									+ data.getGameName()
-									+ " "
-									+ data.getTime()
-									+ " ------------------------------------------\n");
-						}
-					}
-					fw.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-					Log.d("WRITEACCELEROMETER", "File write failed");
-				}
-			}
-		})).start();
+		try {
+			fileWriter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		super.onDestroy();
 		Toast.makeText(this, "Service destroyed...", Toast.LENGTH_LONG).show();
 
@@ -153,13 +94,55 @@ public class AccelerometerService extends Service implements
 	public int onStartCommand(Intent intent, int flags, int startid) {
 		// code to execute when the service is starting up
 		idNum = intent.getStringExtra("IDNUMBER");
-		accelerationData = new ArrayList<AccelerometerData>();
 		sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 		sensorAccelerometer = sensorManager
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		sensorManager.registerListener(this, sensorAccelerometer,
 				SensorManager.SENSOR_DELAY_GAME);
+ 
+		try {
+			File card = Environment.getExternalStorageDirectory();
+			File directory = new File(card.getAbsolutePath()
+					+ "/test/accelerometerdata");
+			directory.mkdirs();
 
+			Date time = new Date();
+			String dayString = "";
+			int day = time.getDate();
+
+			if (day < 10) {
+				dayString = "0" + day;
+			} else {
+				dayString += day;
+			}
+
+			String monthString = "";
+			int month = time.getMonth() + 1;
+
+			if (month < 10) {
+				monthString = "0" + month;
+			} else {
+				monthString += month;
+			}
+			int year = time.getYear() + 1900;
+			String fileName = idNum + "_" + year + "-"
+					+ monthString + "-" + dayString + "_"
+					+ time.getHours() + "-" + time.getMinutes()
+					+ ".csv";
+
+			File sampleFile = new File(directory, fileName);
+			sampleFile.createNewFile();
+
+			fileWriter = new FileWriter(sampleFile);
+			fileWriter.write("--------------------------------Data File Created by Motorola Droid Android v2.0.1-----------------------------------------\n");
+			fileWriter.write("Epoch Period (hh:mm:ss) 00:00:15\n");
+			fileWriter.write("---------------------------------------------------------------------------------------------------------------------------\n");
+			fileWriter.write("Timestamp,X-Acceleration,Y-Acceleration,Z-Acceleration\n");
+			//fileWriter.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.d("WRITEACCELEROMETER", "File write failed");
+			}
 		Toast.makeText(this, "Service started...", Toast.LENGTH_LONG).show();
 
 		return startid;
@@ -178,7 +161,33 @@ public class AccelerometerService extends Service implements
 			endOfGame = false;
 			gameName = null;
 		}
-		accelerationData.add(data);
+		try {
+			//FileWriter fileWriter = new FileWriter(writeFile);
+		if (data.getGameName() != null && data.getEndOfGame() != true) {
+			fileWriter.write("-----------------"
+					+ data.getGameName()
+					+ " "
+					+ data.getTime()
+					+ " ------------------------------------------\n");
+		}
+		fileWriter.write(data.getTime() + "," + data.getAccelerationX()
+				+ "," + data.getAccelerationY() + ","
+				+ data.getAccelerationZ() + "\n");
+		if (data.getEndOfGame() == true && data.getGameName() != null) {
+			fileWriter.write("-----------------END OF "
+					+ data.getGameName()
+					+ " "
+					+ data.getTime()
+					+ " ------------------------------------------\n");
+		}
+		//fileWriter.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//reset the variables
+		if (endOfGame == true) { endOfGame = false; }
+		if (gameName != null) { gameName = null; }
+		
 	}
 
 	public void onSensorChanged(SensorEvent event) {
